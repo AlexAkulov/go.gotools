@@ -9,6 +9,7 @@ import (
 	"go/ast"
 	"go/token"
 	"sort"
+	"strings"
 	"sync"
 
 	"cloudeng.io/errors"
@@ -73,6 +74,9 @@ func (ld *loader) loadPaths(paths []string, includeTests bool) error {
 	for _, pkg := range pkgs {
 		ld.packages[pkg.PkgPath] = pkg
 		for i, filename := range pkg.CompiledGoFiles {
+			if !strings.HasSuffix(filename, ".go") {
+				continue
+			}
 			file := pkg.Syntax[i]
 			ld.files[filename] = fileDesc{
 				name:     filename,

@@ -19,6 +19,118 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// EnsureCopyrightOnly represents an annotator that can insert or replace
+// copyright headers in Go source code files.
+type EnsureCopyrightOnly struct {
+	EssentialOptions `yaml:",inline"`
+	Copyright        string   `yaml:"copyright" annotator:"desired copyright notice."`
+	Exclusions       []string `yaml:"exclusions" annotator:"regular expressions for files to be excluded."`
+	UpdateCopyright  bool     `yaml:"updateCopyright" annotator:"set to true to update existing copyright notice"`
+}
+
+// New implements annotators.Annotators.
+func (ec *EnsureCopyrightOnly) New(name string) Annotation {
+	n := &EnsureCopyrightOnly{}
+	n.Name = name
+	return n
+}
+
+// UnmarshalYAML implements annotators.Annotations.
+func (ec *EnsureCopyrightOnly) UnmarshalYAML(buf []byte) error {
+	return yaml.Unmarshal(buf, ec)
+}
+
+// Describe implements annotators.Annotations.
+func (ec *EnsureCopyrightOnly) Describe() string {
+	return internal.MustDescribe(ec,
+		`an annotator that ensures that a copyright notice is 
+present at the top of all files. It will not remove existing notices.`,
+	)
+}
+
+// Do implements annotators.Annotations.
+func (ec *EnsureCopyrightOnly) Do(ctx context.Context, root string, pkgs []string) error {
+	if len(ec.Copyright) == 0 {
+		return fmt.Errorf("missing or empty copyright specified in the configuration file")
+	}
+	exclusionREs, err := compileREs(ec.Exclusions)
+	if err != nil {
+		return err
+	}
+	locator := locate.New(
+		concurrencyOpt(ec.Concurrency),
+		locate.Trace(Verbosef),
+		locate.IgnoreMissingFuctionsEtc(),
+		locate.IncludeTests(),
+	)
+	if len(pkgs) == 0 {
+		pkgs = ec.Packages
+	}
+	locator.AddPackages(pkgs...)
+	Verbosef("locating functions to have a copyright/license annotation...")
+	if err := locator.Do(ctx); err != nil {
+		return fmt.Errorf("failed to locate functions and/or interface implementations: %v", err)
+	}
+
+	state := walkerStateCopyrightOnly{
+		EnsureCopyrightOnly: ec,
+		dirty:               map[string]bool{},
+		edits:               map[string][]edit.Delta{},
+		exclusionREs:        exclusionREs,
+		newCopyright:        strings.TrimSuffix(ec.Copyright, "\n") + "\n\n",
+	}
+	locator.WalkFiles(state.determineEdits)
+	return applyEdits(ctx, computeOutputs(root, state.edits), state.edits)
+}
+
+type walkerStateCopyrightOnly struct {
+	*EnsureCopyrightOnly
+	dirty        map[string]bool
+	edits        map[string][]edit.Delta
+	exclusionREs []*regexp.Regexp
+	newCopyright string
+}
+
+func (ws *walkerStateCopyrightOnly) determineEdits(filename string,
+	pkg *packages.Package,
+	_ ast.CommentMap,
+	file *ast.File,
+	_ locate.HitMask) {
+
+	for _, re := range ws.exclusionREs {
+		if re.MatchString(filename) {
+			ws.edits[filename] = nil
+			ws.dirty[filename] = true
+			return
+		}
+	}
+
+	tokenFile := pkg.Fset.File(file.Pos())
+
+	var copyright *ast.Comment
+	for _, cg := range file.Comments {
+		if tokenFile.Offset(cg.Pos()) == 0 && cg != file.Doc {
+			// Find comment block at top of file that is not a 'doc' comment.
+			comments := cg.List
+			sanitized := strings.TrimSpace(strings.ToLower(cg.Text()))
+			if strings.HasPrefix(sanitized, "copyright") {
+				copyright = comments[0]
+			}
+		}
+	}
+	var deltas []edit.Delta
+	if copyright != nil {
+		if ws.UpdateCopyright {
+			deltas = append(deltas, edit.ReplaceString(0, len(copyright.Text)+1, ws.newCopyright))
+		}
+	} else {
+		// New copyright.
+		deltas = append(deltas, edit.InsertString(0, ws.newCopyright))
+	}
+	ws.edits[filename] = append(ws.edits[filename], deltas...)
+	ws.dirty[filename] = true
+}
+
 // EnsureCopyrightAndLicense represents an annotator that can insert or replace
 // copyright and license headers from go source code files.
 type EnsureCopyrightAndLicense struct {
@@ -33,6 +145,7 @@ type EnsureCopyrightAndLicense struct {
 
 func init() {
 	Register(&EnsureCopyrightAndLicense{})
+	Register(&EnsureCopyrightOnly{})
 }
 
 // New implements annotators.Annotators.
@@ -93,7 +206,7 @@ func (ec *EnsureCopyrightAndLicense) Do(ctx context.Context, root string, pkgs [
 		return fmt.Errorf("failed to locate functions and/or interface implementations: %v", err)
 	}
 
-	state := walkerState{
+	state := walkerStateCopyrightAndLicense{
 		EnsureCopyrightAndLicense: ec,
 		dirty:                     map[string]bool{},
 		edits:                     map[string][]edit.Delta{},
@@ -105,7 +218,7 @@ func (ec *EnsureCopyrightAndLicense) Do(ctx context.Context, root string, pkgs [
 	return applyEdits(ctx, computeOutputs(root, state.edits), state.edits)
 }
 
-type walkerState struct {
+type walkerStateCopyrightAndLicense struct {
 	*EnsureCopyrightAndLicense
 	dirty        map[string]bool
 	edits        map[string][]edit.Delta
@@ -114,7 +227,7 @@ type walkerState struct {
 	newLicense   string
 }
 
-func (ws *walkerState) determineEdits(filename string,
+func (ws *walkerStateCopyrightAndLicense) determineEdits(filename string,
 	pkg *packages.Package,
 	_ ast.CommentMap,
 	file *ast.File,

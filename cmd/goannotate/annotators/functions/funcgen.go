@@ -78,7 +78,7 @@ func (s *Spec) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 	if !flags.AllSet(s.Type) {
-		return fmt.Errorf("Type not set")
+		return fmt.Errorf("type not set")
 	}
 	generator := generators[s.Type]
 	if generator == nil {

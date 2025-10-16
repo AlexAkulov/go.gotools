@@ -289,7 +289,10 @@ func listPackagesOrSpecs(ctx context.Context, specs []string) ([]string, error) 
 }
 
 func listPackages(ctx context.Context, packages []string) ([]string, error) {
-	cmd := exec.CommandContext(ctx, "go", append([]string{"list"}, packages...)...)
+	args := make([]string, 1, len(packages)+1)
+	args[0] = "list"
+	args = append(args, packages...)
+	cmd := exec.CommandContext(ctx, "go", args...)
 	out, err := cmd.Output()
 	if err != nil {
 		cl := strings.Join(cmd.Args, ", ")

@@ -120,7 +120,7 @@ Describe implements functions.CallGenerator.
 
 
 ```go
-func (lc *LogCallWithContext) Generate(fset *token.FileSet, fn *types.Func, decl *ast.FuncDecl) (string, error)
+func (lc *LogCallWithContext) Generate(_ *token.FileSet, fn *types.Func, _ *ast.FuncDecl) (string, error)
 ```
 
 
@@ -157,7 +157,7 @@ Describe implements functions.CallGenerator.
 
 
 ```go
-func (sl *SimpleLogCall) Generate(fset *token.FileSet, fn *types.Func, decl *ast.FuncDecl) (string, error)
+func (sl *SimpleLogCall) Generate(_ *token.FileSet, fn *types.Func, _ *ast.FuncDecl) (string, error)
 ```
 
 

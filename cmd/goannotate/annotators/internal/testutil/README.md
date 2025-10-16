@@ -14,7 +14,7 @@ func CompareDiffReports(t *testing.T, a, b []DiffReport)
 
 ### Func DiffOneFile
 ```go
-func DiffOneFile(t *testing.T, a, b string) string
+func DiffOneFile(a, b string) string
 ```
 
 ### Func LocatePackages

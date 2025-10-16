@@ -45,12 +45,11 @@ FormatForVar determines an appropriate format spec and argument for a single
 function argument or result. The format spec is intended to be passed to a
 fmt style logging function. It takes care to ensure that the log output is
 bounded as follows:
-
-    1. strings and types that implement stringer are printed as %.10s
-    2. slices and maps have only their length printed
-    3. errors are printed as %v with no other restrictions
-    4. runes are printed as %c, bytes as %02x and pointers are as %02x
-    5. for all other types, only the name of the variable is printed
+ 1. strings and types that implement stringer are printed as %.10s
+ 2. slices and maps have only their length printed
+ 3. errors are printed as %v with no other restrictions
+ 4. runes are printed as %c, bytes as %02x and pointers are as %02x
+ 5. for all other types, only the name of the variable is printed
 
 ### Func HasContext
 ```go
