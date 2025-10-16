@@ -23,9 +23,9 @@ import (
 // copyright headers in Go source code files.
 type EnsureCopyrightOnly struct {
 	EssentialOptions `yaml:",inline"`
-	Copyright       string   `yaml:"copyright" annotator:"desired copyright notice."`
-	Exclusions      []string `yaml:"exclusions" annotator:"regular expressions for files to be excluded."`
-	UpdateCopyright bool     `yaml:"updateCopyright" annotator:"set to true to update existing copyright notice"`
+	Copyright        string   `yaml:"copyright" annotator:"desired copyright notice."`
+	Exclusions       []string `yaml:"exclusions" annotator:"regular expressions for files to be excluded."`
+	UpdateCopyright  bool     `yaml:"updateCopyright" annotator:"set to true to update existing copyright notice"`
 }
 
 // New implements annotators.Annotators.
@@ -77,7 +77,7 @@ func (ec *EnsureCopyrightOnly) Do(ctx context.Context, root string, pkgs []strin
 		dirty:               map[string]bool{},
 		edits:               map[string][]edit.Delta{},
 		exclusionREs:        exclusionREs,
-		newCopyright:        strings.TrimSuffix(ec.Copyright, "\n") + "\n",
+		newCopyright:        strings.TrimSuffix(ec.Copyright, "\n") + "\n\n",
 	}
 	locator.WalkFiles(state.determineEdits)
 	return applyEdits(ctx, computeOutputs(root, state.edits), state.edits)
@@ -119,20 +119,17 @@ func (ws *walkerStateCopyRightOnly) determineEdits(filename string,
 		}
 	}
 	var deltas []edit.Delta
-	fmt.Printf("%v: %#v\n",filename, copyright)
 	if copyright != nil {
 		if ws.UpdateCopyright {
 			deltas = append(deltas, edit.ReplaceString(0, len(copyright.Text)+1, ws.newCopyright))
 		}
 	} else {
 		// New copyright.
-		deltas = append(deltas, edit.InsertString(0, ws.newCopyright+"\n"))
-		
+		deltas = append(deltas, edit.InsertString(0, ws.newCopyright))
 	}
 	ws.edits[filename] = append(ws.edits[filename], deltas...)
 	ws.dirty[filename] = true
 }
-
 
 // EnsureCopyrightAndLicense represents an annotator that can insert or replace
 // copyright and license headers from go source code files.
