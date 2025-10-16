@@ -72,7 +72,7 @@ func (ec *EnsureCopyrightOnly) Do(ctx context.Context, root string, pkgs []strin
 		return fmt.Errorf("failed to locate functions and/or interface implementations: %v", err)
 	}
 
-	state := walkerStateCopyRightOnly{
+	state := walkerStateCopyrightOnly{
 		EnsureCopyrightOnly: ec,
 		dirty:               map[string]bool{},
 		edits:               map[string][]edit.Delta{},
@@ -83,7 +83,7 @@ func (ec *EnsureCopyrightOnly) Do(ctx context.Context, root string, pkgs []strin
 	return applyEdits(ctx, computeOutputs(root, state.edits), state.edits)
 }
 
-type walkerStateCopyRightOnly struct {
+type walkerStateCopyrightOnly struct {
 	*EnsureCopyrightOnly
 	dirty        map[string]bool
 	edits        map[string][]edit.Delta
@@ -91,7 +91,7 @@ type walkerStateCopyRightOnly struct {
 	newCopyright string
 }
 
-func (ws *walkerStateCopyRightOnly) determineEdits(filename string,
+func (ws *walkerStateCopyrightOnly) determineEdits(filename string,
 	pkg *packages.Package,
 	_ ast.CommentMap,
 	file *ast.File,
@@ -206,7 +206,7 @@ func (ec *EnsureCopyrightAndLicense) Do(ctx context.Context, root string, pkgs [
 		return fmt.Errorf("failed to locate functions and/or interface implementations: %v", err)
 	}
 
-	state := walkerStateCopyRightAndLicense{
+	state := walkerStateCopyrightAndLicense{
 		EnsureCopyrightAndLicense: ec,
 		dirty:                     map[string]bool{},
 		edits:                     map[string][]edit.Delta{},
@@ -218,7 +218,7 @@ func (ec *EnsureCopyrightAndLicense) Do(ctx context.Context, root string, pkgs [
 	return applyEdits(ctx, computeOutputs(root, state.edits), state.edits)
 }
 
-type walkerStateCopyRightAndLicense struct {
+type walkerStateCopyrightAndLicense struct {
 	*EnsureCopyrightAndLicense
 	dirty        map[string]bool
 	edits        map[string][]edit.Delta
@@ -227,7 +227,7 @@ type walkerStateCopyRightAndLicense struct {
 	newLicense   string
 }
 
-func (ws *walkerStateCopyRightAndLicense) determineEdits(filename string,
+func (ws *walkerStateCopyrightAndLicense) determineEdits(filename string,
 	pkg *packages.Package,
 	_ ast.CommentMap,
 	file *ast.File,

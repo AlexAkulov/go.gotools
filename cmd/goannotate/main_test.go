@@ -65,7 +65,9 @@ func TestCopyrightIsPresent(t *testing.T) {
 }
 
 func TestDescribe(t *testing.T) {
-	cmd := exec.Command("go", "run", ".", "--config="+configFile, "--list")
+	cf := filepath.Clean(configFile)
+	args := []string{"run", ".", "--config=" + cf, "--list-config"}
+	cmd := exec.Command("go", args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("exec: %v", err)

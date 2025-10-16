@@ -1,3 +1,7 @@
+// Copyright 2020 cloudeng llc. All rights reserved.
+// Use of this source code is governed by the Apache-2.0
+// license that can be found in the LICENSE file.
+
 // Usage of goannotate:
 //
 // goannotate provides a configurable and extensible set of annotators
@@ -84,6 +88,18 @@
 //	license:         desired license notice.
 //	updateCopyright: set to true to update existing copyright notice
 //	updateLicense:   set to true to update existing license notice
+//
+// cloudeng.io/go/cmd/goannotate/annotators.EnsureCopyrightOnly:
+// an annotator that ensures that a copyright notice is
+// present at the top of all files. It will not remove existing notices.
+//
+//	type:            name of annotator type.
+//	name:            name of annotation.
+//	packages:        []packages to be annotated
+//	concurrency:     the number of goroutines to use, zero for a sensible default.
+//	copyright:       desired copyright notice.
+//	exclusions:      []regular expressions for files to be excluded.
+//	updateCopyright: set to true to update existing copyright notice
 //
 // cloudeng.io/go/cmd/goannotate/annotators.RmLogCall:
 // an annotator that removes instances of calls to functions.

@@ -187,6 +187,46 @@ UnmarshalYAML implements annotators.Annotations.
 
 
 
+### Type EnsureCopyrightOnly
+```go
+type EnsureCopyrightOnly struct {
+	EssentialOptions `yaml:",inline"`
+	Copyright        string   `yaml:"copyright" annotator:"desired copyright notice."`
+	Exclusions       []string `yaml:"exclusions" annotator:"regular expressions for files to be excluded."`
+	UpdateCopyright  bool     `yaml:"updateCopyright" annotator:"set to true to update existing copyright notice"`
+}
+```
+EnsureCopyrightOnly represents an annotator that can insert or replace
+copyright headers in Go source code files.
+
+### Methods
+
+```go
+func (ec *EnsureCopyrightOnly) Describe() string
+```
+Describe implements annotators.Annotations.
+
+
+```go
+func (ec *EnsureCopyrightOnly) Do(ctx context.Context, root string, pkgs []string) error
+```
+Do implements annotators.Annotations.
+
+
+```go
+func (ec *EnsureCopyrightOnly) New(name string) Annotation
+```
+New implements annotators.Annotators.
+
+
+```go
+func (ec *EnsureCopyrightOnly) UnmarshalYAML(buf []byte) error
+```
+UnmarshalYAML implements annotators.Annotations.
+
+
+
+
 ### Type EssentialOptions
 ```go
 type EssentialOptions struct {

@@ -132,8 +132,8 @@ func (t *T) AddInterfaces(interfaces ...string)
 AddInterfaces adds interfaces whose implementations are to be located. The
 interface names are specified as fully qualified type names with a regular
 expression being accepted for the package local component, or as a go list
-expression (ie. one that starts with ./ or contains '...'). For example, all
-of the following match all interfaces in acme.com/a/b:
+expression (ie. one that starts with ./ or contains '...'). For example,
+all of the following match all interfaces in acme.com/a/b:
 
     acme.com/a/b
     acme.com/a/b.

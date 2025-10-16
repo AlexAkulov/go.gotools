@@ -18,7 +18,6 @@ func (t *T) findImplementations(ctx context.Context, packages []string) error {
 	group, ctx := errgroup.WithContext(ctx)
 	group = errgroup.WithConcurrency(group, t.options.concurrency)
 	for _, pkg := range packages {
-		pkg := pkg
 		group.GoContext(ctx, func() error {
 			return t.findImplementationInPackage(ctx, pkg)
 		})

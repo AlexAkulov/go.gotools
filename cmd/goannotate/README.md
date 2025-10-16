@@ -31,11 +31,12 @@ function.
 
     type:                name of annotator type.
     name:                name of annotation.
-    packages:            packages to be annotated
+    packages:            []packages to be annotated
     concurrency:         the number of goroutines to use, zero for a sensible
                          default.
-    interfaces:          list of interfaces whose implementations are to be annoated.
-    functions:           list of functions that are to be annotated.
+    interfaces:          []list of interfaces whose implementations are to be
+                         annoated.
+    functions:           []list of functions that are to be annotated.
     includeMethods:      if set, methods as well as functions that match the function
                          spec are annotated
     atLeastStatements:   the number of statements that must be present in a function
@@ -76,29 +77,41 @@ function.
         functionName: name of the function to be invoked.
         contextType:  type for the context parameter and result.
 
-cloudeng.io/go/cmd/goannotate/annotators.EnsureCopyrightAndLicense: an
-annotator that ensures that a copyright and license notice is present at the
-top of all files. It will not remove existing notices.
+cloudeng.io/go/cmd/goannotate/annotators.EnsureCopyrightAndLicense:
+an annotator that ensures that a copyright and license notice is present at
+the top of all files. It will not remove existing notices.
 
     type:            name of annotator type.
     name:            name of annotation.
-    packages:        packages to be annotated
+    packages:        []packages to be annotated
     concurrency:     the number of goroutines to use, zero for a sensible default.
     copyright:       desired copyright notice.
-    exclusions:      regular expressions for files to be excluded.
+    exclusions:      []regular expressions for files to be excluded.
     license:         desired license notice.
     updateCopyright: set to true to update existing copyright notice
     updateLicense:   set to true to update existing license notice
+
+cloudeng.io/go/cmd/goannotate/annotators.EnsureCopyrightOnly: an annotator
+that ensures that a copyright notice is present at the top of all files.
+It will not remove existing notices.
+
+    type:            name of annotator type.
+    name:            name of annotation.
+    packages:        []packages to be annotated
+    concurrency:     the number of goroutines to use, zero for a sensible default.
+    copyright:       desired copyright notice.
+    exclusions:      []regular expressions for files to be excluded.
+    updateCopyright: set to true to update existing copyright notice
 
 cloudeng.io/go/cmd/goannotate/annotators.RmLogCall: an annotator that
 removes instances of calls to functions.
 
     type:           name of annotator type.
     name:           name of annotation.
-    packages:       packages to be annotated
+    packages:       []packages to be annotated
     concurrency:    the number of goroutines to use, zero for a sensible default.
-    interfaces:     list of interfaces whose implementations are to be annoated.
-    functions:      list of functions that are to be annotated.
+    interfaces:     []list of interfaces whose implementations are to be annoated.
+    functions:      []list of functions that are to be annotated.
     includeMethods: if set, methods as well as functions that match the function
                     spec are annotated
     functionNameRE: the function call (regexp) to be removed
