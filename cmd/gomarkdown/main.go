@@ -21,13 +21,34 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
+// excludeList is a flag.Value that accumulates multiple -exclude values.
+type excludeList []string
+
+func (e *excludeList) String() string { return strings.Join(*e, ", ") }
+func (e *excludeList) Set(v string) error {
+	*e = append(*e, filepath.Clean(v))
+	return nil
+}
+func (e excludeList) contains(path string) bool {
+	clean := filepath.Clean(path)
+	for _, ex := range e {
+		if clean == ex || strings.HasPrefix(clean, ex+string(filepath.Separator)) {
+			return true
+		}
+	}
+	return false
+}
+
 var (
 	markdownFlag        string
 	gopkgSiteFlag       string
 	mdOutputFlag        string
 	overwriteFlag       bool
+	checkFlag           bool
 	goreportCardFlag    bool
 	circleciProjectFlag string
+	needsUpdate         bool
+	excludeFlag         excludeList
 )
 
 func init() {
@@ -37,6 +58,8 @@ func init() {
 	flag.BoolVar(&goreportCardFlag, "goreportcard", false, "insert a link to goreportcard.com")
 	flag.StringVar(&mdOutputFlag, "md-output", "README.md", "name of markdown output file.")
 	flag.BoolVar(&overwriteFlag, "overwrite", false, "overwrite existing file.")
+	flag.BoolVar(&checkFlag, "check", false, "check if files are up-to-date without writing; exits with code 1 if any file would be created or changed.")
+	flag.Var(&excludeFlag, "exclude", "exclude paths matching this prefix (may be repeated).")
 }
 
 func main() {
@@ -75,8 +98,10 @@ func main() {
 			return
 		}
 		loaded[pkg.PkgPath] = pkg
-		baseName := strings.TrimSuffix(pkg.PkgPath, "_test")
-		merged[baseName] = append(merged[baseName], pkg.Syntax...)
+		if strings.HasSuffix(pkg.PkgPath, "_test") {
+			return
+		}
+		merged[pkg.PkgPath] = append(merged[pkg.PkgPath], pkg.Syntax...)
 	})
 
 	if err := errs.Err(); err != nil {
@@ -107,6 +132,10 @@ func main() {
 			goreportcard(goreportCardFlag),
 			circleciProject(circleciProjectFlag),
 		)
+		if len(pkg.CompiledGoFiles) == 0 {
+			continue
+		}
+		
 		dir := dirForPackage(pkg)
 		var mdOutput string
 		if commands[name] {
@@ -118,10 +147,18 @@ func main() {
 			errs.Append(err)
 			continue
 		}
-		errs.Append(writeMarkdown(filepath.Join(dir, mdOutputFlag), mdOutput))
+		outFile := filepath.Join(dir, mdOutputFlag)
+		if excludeFlag.contains(outFile) {
+			fmt.Printf("excluded: %v\n", outFile)
+			continue
+		}
+		errs.Append(writeMarkdown(outFile, mdOutput))
 	}
 	if err := errs.Err(); err != nil {
 		cmdutil.Exit("%v", err)
+	}
+	if checkFlag && needsUpdate {
+		os.Exit(1)
 	}
 }
 
@@ -147,9 +184,29 @@ func writeAllowed(filename string) error {
 }
 
 func writeMarkdown(filename string, text string) error {
-	fmt.Printf("writing: %v\n", filename)
-	if err := writeAllowed(filename); err != nil {
-		return err
+	existing, err := os.ReadFile(filename)
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("unexpected error reading %v: %v", filename, err)
+	}
+	if err == nil {
+		if string(existing) == text {
+			fmt.Printf("skipped: %v\n", filename)
+			return nil
+		}
+		needsUpdate = true
+		fmt.Printf("changed: %v\n", filename)
+		if checkFlag {
+			return nil
+		}
+		if err := writeAllowed(filename); err != nil {
+			return err
+		}
+	} else {
+		needsUpdate = true
+		fmt.Printf("created: %v\n", filename)
+		if checkFlag {
+			return nil
+		}
 	}
 	return os.WriteFile(filename, []byte(text), 0600)
 }
